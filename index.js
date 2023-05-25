@@ -8,7 +8,7 @@ var gamesPlayed = [];
 // Query Selectors
 var inputs = document.querySelectorAll('input');
 var guessButton = document.querySelector('#guess-button');
-var keyLetters = document.querySelectorAll('span');
+var keyLetters = document.querySelectorAll('.keyletter');
 var errorMessage = document.querySelector('#error-message');
 var viewRulesButton = document.querySelector('#rules-button');
 var viewGameButton = document.querySelector('#play-button');
@@ -25,13 +25,9 @@ let words = [];
 // Event Listeners
 window.addEventListener('load', getWords);
 
-for (var i = 0; i < inputs.length; i++) {
-  inputs[i].addEventListener('keyup', function() { moveToNextInput(event) });
-}
+inputs.forEach(input => input.addEventListener('keyup', (event) => moveToNextInput(event)));
 
-for (var i = 0; i < keyLetters.length; i++) {
-  keyLetters[i].addEventListener('click', function() { clickLetter(event) });
-}
+keyLetters.forEach(keyLetter => keyLetter.addEventListener('click', (event) => clickLetter(event)));
 
 guessButton.addEventListener('click', submitGuess);
 
