@@ -183,14 +183,15 @@ function changeRow() {
 }
 
 function declareWinnerOrLoser(winType) {
-  recordGameStats();
+  recordGameStats(winType);
   changeGameOverText(winType);
   viewGameOverMessage();
   setTimeout(startNewGame, 4000);
 }
 
-function recordGameStats() {
-  gamesPlayed.push({ solved: true, guesses: currentRow });
+function recordGameStats(winType) {
+  var status = {winner: true, loser: false}
+  gamesPlayed.push({ solved: status[winType], guesses: guesses.length });
 }
 
 function updateGuessGrammar() {
