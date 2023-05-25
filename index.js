@@ -20,9 +20,7 @@ var stats = document.querySelector('#stats-section');
 var gameOverBox = document.querySelector('#game-over-section');
 var gameOverGuessCount = document.querySelector('#game-over-guesses-count');
 var gameOverGuessGrammar = document.querySelector('#game-over-guesses-plural');
-// var totalGames = document.querySelector('#stats-total-games');
-// var avgWins = document.querySelector('#stats-percent-correct');
-// var avgGuesses = document.querySelector('#stats-average-guesses');
+var timer; 
 
 let words = [];
 
@@ -164,7 +162,7 @@ function declareWinnerOrLoser(winType) {
   recordGameStats(winType);
   changeGameOverText(winType);
   viewGameOverMessage();
-  setTimeout(startNewGame, 4000);
+  timer = setTimeout(startNewGame, 4000);
 }
 
 function recordGameStats(winType) {
@@ -255,6 +253,7 @@ function viewRules() {
   viewGameButton.classList.remove('active');
   viewRulesButton.classList.add('active');
   viewStatsButton.classList.remove('active');
+  clearTimeout(timer);
 }
 
 function viewGame() {
@@ -269,7 +268,9 @@ function viewGame() {
 }
 
 function viewStats() {
+  startNewGame()
   updateGameStats();
+  gameOverBox.classList.add('collapsed')
   letterKey.classList.add('hidden');
   gameBoard.classList.add('collapsed');
   rules.classList.add('collapsed');
@@ -277,6 +278,7 @@ function viewStats() {
   viewGameButton.classList.remove('active');
   viewRulesButton.classList.remove('active');
   viewStatsButton.classList.add('active');
+  clearTimeout(timer);
 }
 
 function viewGameOverMessage() {
