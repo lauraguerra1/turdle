@@ -2,6 +2,7 @@
 var winningWord = '';
 var currentRow = 1;
 var guess = '';
+var guesses = [];
 var gamesPlayed = [];
 
 // Query Selectors
@@ -98,11 +99,15 @@ function clickLetter(e) {
 }
 
 function submitGuess() {
+  updateGuess();
   if (checkIsWord(words)) {
     errorMessage.innerText = '';
+    guesses.push(guess)
     compareGuess();
     if (checkForWin()) {
-      setTimeout(declareWinner, 1000);
+      setTimeout(declareWinnerOrLoser, 1000, 'winner');
+    } else if (guesses.length === 6) {
+      setTimeout(declareWinnerOrLoser, 1000, 'loser');
     } else {
       changeRow();
     }
@@ -111,7 +116,7 @@ function submitGuess() {
   }
 }
 
-function checkIsWord(words) {
+function updateGuess() {
   guess = '';
 
   for(var i = 0; i < inputs.length; i++) {
@@ -119,7 +124,9 @@ function checkIsWord(words) {
       guess += inputs[i].value;
     }
   }
+}
 
+function checkIsWord(words) {
   return words.includes(guess);
 }
 
@@ -175,9 +182,9 @@ function changeRow() {
   updateInputPermissions();
 }
 
-function declareWinner() {
+function declareWinnerOrLoser(winType) {
   recordGameStats();
-  changeGameOverText();
+  changeGameOverText(winType);
   viewGameOverMessage();
   setTimeout(startNewGame, 4000);
 }
@@ -186,12 +193,21 @@ function recordGameStats() {
   gamesPlayed.push({ solved: true, guesses: currentRow });
 }
 
-function changeGameOverText() {
-  gameOverGuessCount.innerText = currentRow;
-  if (currentRow < 2) {
+function changeGameOverText(winType) {
+  var gameOverMsg = document.querySelector('#game-over-message');
+  var winMsg = document.querySelector('.win-message')
+  if(winType === 'winner') {
+    gameOverGuessCount.innerText = currentRow;
+    if (currentRow < 2) {
     gameOverGuessGrammar.classList.add('collapsed');
-  } else {
+    } else {
     gameOverGuessGrammar.classList.remove('collapsed');
+    }
+    gameOverMsg.innerText = 'Yay!'
+    winMsg.classList.remove('collapsed')
+  } else {
+    gameOverMsg.innerText = `Oh no! Sorry, you lost. The winning word was ${winningWord}.`
+    winMsg.classList.add('collapsed')
   }
 }
 
@@ -208,6 +224,8 @@ function clearGameBoard() {
     inputs[i].value = '';
     inputs[i].classList.remove('correct-location', 'wrong-location', 'wrong');
   }
+  guess = '';
+  guesses = [];
 }
 
 function clearKey() {
