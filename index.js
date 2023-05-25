@@ -20,6 +20,10 @@ var stats = document.querySelector('#stats-section');
 var gameOverBox = document.querySelector('#game-over-section');
 var gameOverGuessCount = document.querySelector('#game-over-guesses-count');
 var gameOverGuessGrammar = document.querySelector('#game-over-guesses-plural');
+// var totalGames = document.querySelector('#stats-total-games');
+// var avgWins = document.querySelector('#stats-percent-correct');
+// var avgGuesses = document.querySelector('#stats-average-guesses');
+
 let words = [];
 
 // Event Listeners
@@ -221,6 +225,26 @@ function clearKey() {
   keyLetters.forEach(keyLetter => keyLetter.classList.remove('correct-location-key', 'wrong-location-key', 'wrong-key'));
 }
 
+function getAvgGuesses() {
+  var allGuesses = gamesPlayed.reduce((totalGuesses, curr) =>  totalGuesses += curr.guesses, 0)
+  return allGuesses/gamesPlayed.length
+}
+
+function getPercentCorrect() {
+  var wonGames = gamesPlayed.filter(game => game.solved).length;
+  var percentWon = (wonGames / gamesPlayed.length) * 100 
+  return percentWon.toFixed(0)
+}
+
+function updateGameStats() {
+  var totalGames = document.querySelector('#stats-total-games');
+  var avgWins = document.querySelector('#stats-percent-correct');
+  var avgGuesses = document.querySelector('#stats-average-guesses');
+  totalGames.innerText = `${gamesPlayed.length}`
+  avgWins.innerText = `${getPercentCorrect()}`
+  avgGuesses.innerText = `${getAvgGuesses()}`
+}
+
 // Change Page View Functions
 
 function viewRules() {
@@ -245,6 +269,7 @@ function viewGame() {
 }
 
 function viewStats() {
+  updateGameStats();
   letterKey.classList.add('hidden');
   gameBoard.classList.add('collapsed');
   rules.classList.add('collapsed');
