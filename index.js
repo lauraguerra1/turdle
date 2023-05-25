@@ -195,7 +195,9 @@ function recordGameStats() {
 
 function changeGameOverText(winType) {
   var gameOverMsg = document.querySelector('#game-over-message');
-  var winMsg = document.querySelector('.win-message')
+  var winMsg = document.querySelector('.win-message');
+  var loseMsg = document.querySelector('.lose-message');
+  var winningWordMsg = document.querySelector('#winningWord');
   if(winType === 'winner') {
     gameOverGuessCount.innerText = currentRow;
     if (currentRow < 2) {
@@ -203,11 +205,14 @@ function changeGameOverText(winType) {
     } else {
     gameOverGuessGrammar.classList.remove('collapsed');
     }
-    gameOverMsg.innerText = 'Yay!'
-    winMsg.classList.remove('collapsed')
+    gameOverMsg.innerText = 'Yay!';
+    winMsg.classList.remove('collapsed');
+    loseMsg.classList.add('collapsed');
   } else {
-    gameOverMsg.innerText = `Oh no! Sorry, you lost. The winning word was ${winningWord}.`
-    winMsg.classList.add('collapsed')
+    gameOverMsg.innerText = 'Oh no!';
+    winningWordMsg.innerText = `${winningWord}`;
+    winMsg.classList.add('collapsed');
+    loseMsg.classList.remove('collapsed');
   }
 }
 
