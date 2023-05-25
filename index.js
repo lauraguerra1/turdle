@@ -2,12 +2,13 @@
 var winningWord = '';
 var currentRow = 1;
 var guess = '';
+var guesses = [];
 var gamesPlayed = [];
 
 // Query Selectors
 var inputs = document.querySelectorAll('input');
 var guessButton = document.querySelector('#guess-button');
-var keyLetters = document.querySelectorAll('span');
+var keyLetters = document.querySelectorAll('.keyletter');
 var errorMessage = document.querySelector('#error-message');
 var viewRulesButton = document.querySelector('#rules-button');
 var viewGameButton = document.querySelector('#play-button');
@@ -24,13 +25,9 @@ let words = [];
 // Event Listeners
 window.addEventListener('load', getWords);
 
-for (var i = 0; i < inputs.length; i++) {
-  inputs[i].addEventListener('keyup', function() { moveToNextInput(event) });
-}
+inputs.forEach(input => input.addEventListener('keyup', (event) => moveToNextInput(event)));
 
-for (var i = 0; i < keyLetters.length; i++) {
-  keyLetters[i].addEventListener('click', function() { clickLetter(event) });
-}
+keyLetters.forEach(keyLetter => keyLetter.addEventListener('click', (event) => clickLetter(event)));
 
 guessButton.addEventListener('click', submitGuess);
 
@@ -61,15 +58,19 @@ function getRandomWord(words) {
   return words[randomIndex];
 }
 
-function updateInputPermissions() {
-  for(var i = 0; i < inputs.length; i++) {
-    if(!inputs[i].id.includes(`-${currentRow}-`)) {
-      inputs[i].disabled = true;
-    } else {
-      inputs[i].disabled = false;
-    }
+function getRows() {
+  return {
+    activeRow: Array.from(inputs)
+      .filter(input => input.id.includes(`-${currentRow}-`)),
+    inactiveRow: Array.from(inputs)
+      .filter(input => !input.id.includes(`-${currentRow}-`))
   }
+}
 
+function updateInputPermissions() {
+  var grid = getRows();
+  grid.activeRow.forEach(input => input.disabled = false)
+  grid.inactiveRow.forEach(input => input.disabled = true)
   inputs[0].focus();
 }
 
@@ -83,26 +84,26 @@ function moveToNextInput(e) {
 }
 
 function clickLetter(e) {
-  var activeInput = null;
-  var activeIndex = null;
+  var inputsArray = Array.from(inputs);
+  var activeInput = inputsArray.find(input => {
+    return input.id.includes(`-${currentRow}-`) && !input.value
+  })
 
-  for (var i = 0; i < inputs.length; i++) {
-    if(inputs[i].id.includes(`-${currentRow}-`) && !inputs[i].value && !activeInput) {
-      activeInput = inputs[i];
-      activeIndex = i;
-    }
-  }
-
+  var activeIndex = inputsArray.indexOf(activeInput)
   activeInput.value = e.target.innerText;
   inputs[activeIndex + 1].focus();
 }
 
 function submitGuess() {
+  updateGuess();
   if (checkIsWord(words)) {
     errorMessage.innerText = '';
+    guesses.push(guess)
     compareGuess();
     if (checkForWin()) {
-      setTimeout(declareWinner, 1000);
+      setTimeout(declareWinnerOrLoser, 1000, 'winner');
+    } else if (guesses.length === 6) {
+      setTimeout(declareWinnerOrLoser, 1000, 'loser');
     } else {
       changeRow();
     }
@@ -111,58 +112,38 @@ function submitGuess() {
   }
 }
 
+function updateGuess() {
+  guess = getRows().activeRow
+    .map(input => input.value)
+    .join('')
+}
+
 function checkIsWord(words) {
-  guess = '';
-
-  for(var i = 0; i < inputs.length; i++) {
-    if(inputs[i].id.includes(`-${currentRow}-`)) {
-      guess += inputs[i].value;
-    }
-  }
-
   return words.includes(guess);
 }
 
 function compareGuess() {
-  var guessLetters = guess.split('');
-
-  for (var i = 0; i < guessLetters.length; i++) {
-
-    if (winningWord.includes(guessLetters[i]) && winningWord.split('')[i] !== guessLetters[i]) {
+  guess.split('').forEach((letter, i) => {
+    if (winningWord.includes(letter) && winningWord.split('')[i] !== letter) {
       updateBoxColor(i, 'wrong-location');
-      updateKeyColor(guessLetters[i], 'wrong-location-key');
-    } else if (winningWord.split('')[i] === guessLetters[i]) {
+      updateKeyColor(letter, 'wrong-location-key');
+    } else if (winningWord.split('')[i] === letter) {
       updateBoxColor(i, 'correct-location');
-      updateKeyColor(guessLetters[i], 'correct-location-key');
+      updateKeyColor(letter, 'correct-location-key');
     } else {
       updateBoxColor(i, 'wrong');
-      updateKeyColor(guessLetters[i], 'wrong-key');
+      updateKeyColor(letter, 'wrong-key');
     }
-  }
-
+  })
 }
 
 function updateBoxColor(letterLocation, className) {
-  var row = [];
-
-  for (var i = 0; i < inputs.length; i++) {
-    if(inputs[i].id.includes(`-${currentRow}-`)) {
-      row.push(inputs[i]);
-    }
-  }
-
+  var row = getRows().activeRow
   row[letterLocation].classList.add(className);
 }
 
 function updateKeyColor(letter, className) {
-  var keyLetter = null;
-
-  for (var i = 0; i < keyLetters.length; i++) {
-    if (keyLetters[i].innerText === letter) {
-      keyLetter = keyLetters[i];
-    }
-  }
-
+  var keyLetter = Array.from(keyLetters).find(key => key.innerText === letter)
   keyLetter.classList.add(className);
 }
 
@@ -175,24 +156,48 @@ function changeRow() {
   updateInputPermissions();
 }
 
-function declareWinner() {
-  recordGameStats();
-  changeGameOverText();
+function declareWinnerOrLoser(winType) {
+  recordGameStats(winType);
+  changeGameOverText(winType);
   viewGameOverMessage();
   setTimeout(startNewGame, 4000);
 }
 
-function recordGameStats() {
-  gamesPlayed.push({ solved: true, guesses: currentRow });
+function recordGameStats(winType) {
+  var status = {winner: true, loser: false}
+  gamesPlayed.push({ solved: status[winType], guesses: guesses.length });
 }
 
-function changeGameOverText() {
-  gameOverGuessCount.innerText = currentRow;
-  if (currentRow < 2) {
+function updateGuessGrammar() {
+  if (guesses.length < 2) {
     gameOverGuessGrammar.classList.add('collapsed');
-  } else {
+    } else {
     gameOverGuessGrammar.classList.remove('collapsed');
+    }
+}
+
+function updateWinOrLoseText(winType) {
+  var gameOverMsg = document.querySelector('#game-over-message');
+  var winMsg = document.querySelector('.win-message');
+  var loseMsg = document.querySelector('.lose-message');
+  var winningWordMsg = document.querySelector('#winningWord');
+  if(winType === 'winner') {
+    gameOverGuessCount.innerText = guesses.length;
+    gameOverMsg.innerText = 'Yay!';
+    winMsg.classList.remove('collapsed');
+    loseMsg.classList.add('collapsed');
+  } else {
+    gameOverMsg.innerText = 'Oh no!';
+    winningWordMsg.innerText = `${winningWord}`;
+    winMsg.classList.add('collapsed');
+    loseMsg.classList.remove('collapsed');
   }
+}
+
+
+function changeGameOverText(winType) {
+    updateGuessGrammar();
+    updateWinOrLoseText(winType);
 }
 
 function startNewGame() {
@@ -204,16 +209,16 @@ function startNewGame() {
 }
 
 function clearGameBoard() {
-  for (var i = 0; i < inputs.length; i++) {
-    inputs[i].value = '';
-    inputs[i].classList.remove('correct-location', 'wrong-location', 'wrong');
-  }
+  inputs.forEach(input => {
+    input.value = '';
+    input.classList.remove('correct-location', 'wrong-location', 'wrong');
+  })
+  guess = '';
+  guesses = [];
 }
 
 function clearKey() {
-  for (var i = 0; i < keyLetters.length; i++) {
-    keyLetters[i].classList.remove('correct-location-key', 'wrong-location-key', 'wrong-key');
-  }
+  keyLetters.forEach(keyLetter => keyLetter.classList.remove('correct-location-key', 'wrong-location-key', 'wrong-key'));
 }
 
 // Change Page View Functions
