@@ -20,6 +20,8 @@ var stats = document.querySelector('#stats-section');
 var gameOverBox = document.querySelector('#game-over-section');
 var gameOverGuessCount = document.querySelector('#game-over-guesses-count');
 var gameOverGuessGrammar = document.querySelector('#game-over-guesses-plural');
+var timer; 
+
 let words = [];
 
 // Event Listeners
@@ -160,7 +162,7 @@ function declareWinnerOrLoser(winType) {
   recordGameStats(winType);
   changeGameOverText(winType);
   viewGameOverMessage();
-  setTimeout(startNewGame, 4000);
+  timer = setTimeout(startNewGame, 4000);
 }
 
 function recordGameStats(winType) {
@@ -221,6 +223,26 @@ function clearKey() {
   keyLetters.forEach(keyLetter => keyLetter.classList.remove('correct-location-key', 'wrong-location-key', 'wrong-key'));
 }
 
+function getAvgGuesses() {
+  var allGuesses = gamesPlayed.reduce((totalGuesses, curr) =>  totalGuesses += curr.guesses, 0)
+  return allGuesses/gamesPlayed.length
+}
+
+function getPercentCorrect() {
+  var wonGames = gamesPlayed.filter(game => game.solved).length;
+  var percentWon = (wonGames / gamesPlayed.length) * 100 
+  return percentWon.toFixed(0)
+}
+
+function updateGameStats() {
+  var totalGames = document.querySelector('#stats-total-games');
+  var avgWins = document.querySelector('#stats-percent-correct');
+  var avgGuesses = document.querySelector('#stats-average-guesses');
+  totalGames.innerText = `${gamesPlayed.length}`
+  avgWins.innerText = `${getPercentCorrect()}`
+  avgGuesses.innerText = `${getAvgGuesses()}`
+}
+
 // Change Page View Functions
 
 function viewRules() {
@@ -231,6 +253,7 @@ function viewRules() {
   viewGameButton.classList.remove('active');
   viewRulesButton.classList.add('active');
   viewStatsButton.classList.remove('active');
+  clearTimeout(timer);
 }
 
 function viewGame() {
@@ -245,6 +268,9 @@ function viewGame() {
 }
 
 function viewStats() {
+  startNewGame()
+  updateGameStats();
+  gameOverBox.classList.add('collapsed')
   letterKey.classList.add('hidden');
   gameBoard.classList.add('collapsed');
   rules.classList.add('collapsed');
@@ -252,6 +278,7 @@ function viewStats() {
   viewGameButton.classList.remove('active');
   viewRulesButton.classList.remove('active');
   viewStatsButton.classList.add('active');
+  clearTimeout(timer);
 }
 
 function viewGameOverMessage() {
