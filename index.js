@@ -19,9 +19,10 @@ var stats = document.querySelector('#stats-section');
 var gameOverBox = document.querySelector('#game-over-section');
 var gameOverGuessCount = document.querySelector('#game-over-guesses-count');
 var gameOverGuessGrammar = document.querySelector('#game-over-guesses-plural');
+let words = [];
 
 // Event Listeners
-window.addEventListener('load', setGame);
+window.addEventListener('load', getWords);
 
 for (var i = 0; i < inputs.length; i++) {
   inputs[i].addEventListener('keyup', function() { moveToNextInput(event) });
@@ -40,14 +41,23 @@ viewGameButton.addEventListener('click', viewGame);
 viewStatsButton.addEventListener('click', viewStats);
 
 // Functions
-function setGame() {
+function getWords(){
+  fetch('http://localhost:3001/api/v1/words')
+    .then(response => response.json())
+    .then(data => {
+      words = data
+      setGame(words)
+    })
+}
+
+function setGame(words) {
   currentRow = 1;
-  winningWord = getRandomWord();
+  winningWord = getRandomWord(words);
   updateInputPermissions();
 }
 
-function getRandomWord() {
-  var randomIndex = Math.floor(Math.random() * 2500);
+function getRandomWord(words) {
+  var randomIndex = Math.floor(Math.random() * words.length);
   return words[randomIndex];
 }
 
@@ -68,7 +78,7 @@ function moveToNextInput(e) {
 
   if( key !== 8 && key !== 46 ) {
     var indexOfNext = parseInt(e.target.id.split('-')[2]) + 1;
-    inputs[indexOfNext].focus();
+    inputs[indexOfNext]?.focus();
   }
 }
 
@@ -88,7 +98,7 @@ function clickLetter(e) {
 }
 
 function submitGuess() {
-  if (checkIsWord()) {
+  if (checkIsWord(words)) {
     errorMessage.innerText = '';
     compareGuess();
     if (checkForWin()) {
@@ -101,7 +111,7 @@ function submitGuess() {
   }
 }
 
-function checkIsWord() {
+function checkIsWord(words) {
   guess = '';
 
   for(var i = 0; i < inputs.length; i++) {
@@ -188,7 +198,7 @@ function changeGameOverText() {
 function startNewGame() {
   clearGameBoard();
   clearKey();
-  setGame();
+  setGame(words);
   viewGame();
   inputs[0].focus();
 }
