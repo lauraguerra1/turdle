@@ -123,7 +123,6 @@ function checkIsWord(words) {
 }
 
 function compareGuess() {
-  // var guessLetters = guess.split('');
   guess.split('').forEach((letter, i) => {
     if (winningWord.includes(letter) && winningWord.split('')[i] !== letter) {
       updateBoxColor(i, 'wrong-location');
