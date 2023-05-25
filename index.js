@@ -193,18 +193,21 @@ function recordGameStats() {
   gamesPlayed.push({ solved: true, guesses: currentRow });
 }
 
-function changeGameOverText(winType) {
+function updateGuessGrammar() {
+  if (guesses.length < 2) {
+    gameOverGuessGrammar.classList.add('collapsed');
+    } else {
+    gameOverGuessGrammar.classList.remove('collapsed');
+    }
+}
+
+function updateWinOrLoseText(winType) {
   var gameOverMsg = document.querySelector('#game-over-message');
   var winMsg = document.querySelector('.win-message');
   var loseMsg = document.querySelector('.lose-message');
   var winningWordMsg = document.querySelector('#winningWord');
   if(winType === 'winner') {
-    gameOverGuessCount.innerText = currentRow;
-    if (currentRow < 2) {
-    gameOverGuessGrammar.classList.add('collapsed');
-    } else {
-    gameOverGuessGrammar.classList.remove('collapsed');
-    }
+    gameOverGuessCount.innerText = guesses.length;
     gameOverMsg.innerText = 'Yay!';
     winMsg.classList.remove('collapsed');
     loseMsg.classList.add('collapsed');
@@ -214,6 +217,12 @@ function changeGameOverText(winType) {
     winMsg.classList.add('collapsed');
     loseMsg.classList.remove('collapsed');
   }
+}
+
+
+function changeGameOverText(winType) {
+    updateGuessGrammar();
+    updateWinOrLoseText(winType);
 }
 
 function startNewGame() {
