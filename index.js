@@ -20,7 +20,8 @@ var stats = document.querySelector('#stats-section');
 var gameOverBox = document.querySelector('#game-over-section');
 var gameOverGuessCount = document.querySelector('#game-over-guesses-count');
 var gameOverGuessGrammar = document.querySelector('#game-over-guesses-plural');
-var timer; 
+var timer1; 
+var timer2;
 
 let words = [];
 
@@ -39,7 +40,7 @@ viewGameButton.addEventListener('click', viewGame);
 
 viewStatsButton.addEventListener('click', viewStats);
 
-// Functions
+// API CALLS
 function getWords(){
   fetch('http://localhost:3001/api/v1/words')
     .then(response => response.json())
@@ -47,8 +48,30 @@ function getWords(){
       words = data
       setGame(words)
     })
+    .catch(error => {
+      console.error(error)
+    })
 }
 
+function postGameStats(data) {
+  fetch('http://localhost:3001/api/v1/games', {
+    method: 'POST',
+    body: JSON.stringify(data), 
+    headers: {
+  	'Content-Type': 'application/json'
+    }
+  })
+}
+
+function getGameStats() {
+  fetch('http://localhost:3001/api/v1/games	')
+    .then(response => response.json())
+    .then(data => updateGameStats(data))
+}
+
+
+
+// FUNCTIONS
 function setGame(words) {
   currentRow = 1;
   winningWord = getRandomWord(words);
@@ -103,9 +126,11 @@ function submitGuess() {
     guesses.push(guess)
     compareGuess();
     if (checkForWin()) {
-      setTimeout(declareWinnerOrLoser, 1000, 'winner');
+      recordGameStats('winner');
+      timer2 = setTimeout(declareWinnerOrLoser, 1000, 'winner');
     } else if (guesses.length === 6) {
-      setTimeout(declareWinnerOrLoser, 1000, 'loser');
+      recordGameStats('loser');
+      timer2 = setTimeout(declareWinnerOrLoser, 1000, 'loser');
     } else {
       changeRow();
     }
@@ -159,15 +184,17 @@ function changeRow() {
 }
 
 function declareWinnerOrLoser(winType) {
-  recordGameStats(winType);
+  // recordGameStats(winType);
   changeGameOverText(winType);
   viewGameOverMessage();
-  timer = setTimeout(startNewGame, 4000);
+  timer1 = setTimeout(startNewGame, 4000);
 }
 
 function recordGameStats(winType) {
   var status = {winner: true, loser: false}
-  gamesPlayed.push({ solved: status[winType], guesses: guesses.length });
+  var gameStat = { solved: status[winType], guesses: guesses.length }
+  gamesPlayed.push(gameStat);
+  postGameStats(gameStat);
 }
 
 function updateGuessGrammar() {
@@ -223,37 +250,41 @@ function clearKey() {
   keyLetters.forEach(keyLetter => keyLetter.classList.remove('correct-location-key', 'wrong-location-key', 'wrong-key'));
 }
 
-function getAvgGuesses() {
-  var allGuesses = gamesPlayed.reduce((totalGuesses, curr) =>  totalGuesses += curr.guesses, 0)
-  return allGuesses/gamesPlayed.length
+function getAvgGuesses(gamesPlayed) {
+  console.log(gamesPlayed)
+  var allGuesses = gamesPlayed.reduce((totalGuesses, curr) =>  totalGuesses += curr.numGuesses, 0)
+  return (allGuesses/gamesPlayed.length).toFixed(2)
 }
 
-function getPercentCorrect() {
+function getPercentCorrect(gamesPlayed) {
   var wonGames = gamesPlayed.filter(game => game.solved).length;
   var percentWon = (wonGames / gamesPlayed.length) * 100 
   return percentWon.toFixed(0)
 }
 
-function updateGameStats() {
+function updateGameStats(gamesPlayed) {
   var totalGames = document.querySelector('#stats-total-games');
   var avgWins = document.querySelector('#stats-percent-correct');
   var avgGuesses = document.querySelector('#stats-average-guesses');
   totalGames.innerText = `${gamesPlayed.length}`
-  avgWins.innerText = `${getPercentCorrect()}`
-  avgGuesses.innerText = `${getAvgGuesses()}`
+  avgWins.innerText = `${getPercentCorrect(gamesPlayed)}`
+  avgGuesses.innerText = `${getAvgGuesses(gamesPlayed)}`
 }
 
 // Change Page View Functions
 
 function viewRules() {
+  startNewGame();
   letterKey.classList.add('hidden');
   gameBoard.classList.add('collapsed');
   rules.classList.remove('collapsed');
   stats.classList.add('collapsed');
+  gameOverBox.classList.add('collapsed')
   viewGameButton.classList.remove('active');
   viewRulesButton.classList.add('active');
   viewStatsButton.classList.remove('active');
-  clearTimeout(timer);
+  clearTimeout(timer2);
+  clearTimeout(timer1);
 }
 
 function viewGame() {
@@ -268,8 +299,8 @@ function viewGame() {
 }
 
 function viewStats() {
-  startNewGame()
-  updateGameStats();
+  startNewGame();
+  getGameStats();
   gameOverBox.classList.add('collapsed')
   letterKey.classList.add('hidden');
   gameBoard.classList.add('collapsed');
@@ -278,7 +309,8 @@ function viewStats() {
   viewGameButton.classList.remove('active');
   viewRulesButton.classList.remove('active');
   viewStatsButton.classList.add('active');
-  clearTimeout(timer);
+  clearTimeout(timer2);
+  clearTimeout(timer1);
 }
 
 function viewGameOverMessage() {
